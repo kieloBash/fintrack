@@ -8,17 +8,150 @@ datasource db {
 }
 
 model User {
-  id    Int     @id @default(autoincrement())
-  email String  @unique
-  name  String?
-  posts Post[]
+  id      String @id @default(cuid())
+  clerkId String @unique
+
+  connectedEmails      ConnectedEmail[]
+  notificationSettings NotificationSettings?
+  alertNotifications   Alert[]
+  budgets              Budget[]
+  transactions         Transaction[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
-model Post {
-  id        Int     @id @default(autoincrement())
-  title     String
-  content   String?
-  published Boolean @default(false)
-  authorId  Int
-  author    User    @relation(fields: [authorId], references: [id])
+enum EmailProvider {
+  GMAIL
+  OUTLOOK
+  YAHOO
+}
+
+enum EmailStatus {
+  ACTIVE
+  PENDING
+  ERROR
+}
+
+model ConnectedEmail {
+  id String @id @default(cuid())
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
+
+  emailAddress String
+
+  provider EmailProvider
+
+  accessToken  String?
+  refreshToken String?
+
+  status EmailStatus
+
+  lastSyncedAt DateTime?
+
+  createdAt DateTime @default(now())
+}
+
+model NotificationSettings {
+  id String @id @default(cuid())
+
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id])
+
+  dailySummary     Boolean @default(true)
+  budgetWarning    Boolean @default(true)
+  unusualSpend     Boolean @default(true)
+  weeklyReport     Boolean @default(false)
+  largeTransaction Boolean @default(true)
+  savingsReminder  Boolean @default(false)
+
+  summaryTime String @default("08:00")
+
+  updatedAt DateTime @updatedAt
+}
+
+enum AlertType {
+  BUDGET_WARNING
+  LARGE_TRANSACTION
+  DAILY_SUMMARY
+  WEEKLY_REPORT
+  UNUSUAL_SPENDING
+}
+
+model Alert {
+  id String @id @default(cuid())
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
+
+  type AlertType
+
+  title   String
+  message String
+
+  read Boolean @default(false)
+
+  createdAt DateTime @default(now())
+}
+
+model Budget {
+  id String @id @default(cuid())
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
+
+  name   String
+  amount Decimal @db.Decimal(10, 2)
+
+  period BudgetPeriod
+
+  startDate DateTime
+  endDate   DateTime?
+
+  createdAt DateTime @default(now())
+}
+
+enum BudgetPeriod {
+  DAILY
+  WEEKLY
+  MONTHLY
+}
+
+enum TransactionSource {
+  MANUAL
+  EMAIL
+  IMPORT
+}
+
+model Transaction {
+  id String @id @default(cuid())
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
+
+  amount Decimal @db.Decimal(10, 2)
+
+  merchant    String?
+  description String?
+
+  categoryId String?
+  category   Category? @relation(fields: [categoryId], references: [id])
+
+  transactionDate DateTime
+
+  source TransactionSource
+
+  createdAt DateTime @default(now())
+}
+
+model Category {
+  id String @id @default(cuid())
+
+  label String @unique
+  icon  String
+  bg    String
+  color String
+
+  transactions Transaction[]
 }

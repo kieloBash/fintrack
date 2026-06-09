@@ -1,4 +1,5 @@
 'use client'
+import { createUserAfterSignIn } from '@/actions/user.actions';
 import { useSignIn, useSignUp } from '@clerk/nextjs';
 import { ArrowLeft, ArrowRight, Check, Eye, EyeOff } from 'lucide-react';
 import { useRouter } from 'next/navigation';
@@ -297,6 +298,7 @@ function RegisterView({ onGoLogin }: RegisterViewProps) {
             setStep(2);
           },
         })
+        await createUserAfterSignIn()
       } else {
         // Check why the status is not complete
         setLoading(false);

@@ -6,6 +6,7 @@ import TransactionsList from "./_components/transactions-list"
 import YesterdaySummary from "./_components/yesterday-summary"
 
 const HomePage = () => {
+
     return (
         <>
             <BalanceCard />
