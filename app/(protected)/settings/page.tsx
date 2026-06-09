@@ -134,16 +134,6 @@ function SectionCard({ title, children }: SectionCardProps) {
     );
 }
 
-interface ConnectedEmail {
-    id: number;
-    address: string;
-    label: string;
-    status: 'active' | 'error' | 'pending';
-    lastSynced: string;
-}
-
-let nextId = 3;
-
 export default function SettingsPage() {
     // CLERK
     const { signOut } = useClerk()
