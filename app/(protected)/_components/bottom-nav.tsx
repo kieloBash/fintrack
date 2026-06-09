@@ -1,5 +1,6 @@
 'use client'
 import { CreditCard, Home, Plus, Receipt, Settings } from 'lucide-react';
+import { usePathname, useRouter } from 'next/navigation';
 
 interface BottomNavProps {
     activeTab: string;
@@ -7,17 +8,22 @@ interface BottomNavProps {
 }
 
 const LEFT_ITEMS = [
-    { id: 'dashboard', icon: Home, label: 'Home' },
-    { id: 'transactions', icon: Receipt, label: 'Activity' },
+    { id: '/home', icon: Home, label: 'Home' },
+    { id: '/transactions', icon: Receipt, label: 'Activity' },
 ];
 const RIGHT_ITEMS = [
-    { id: 'cards', icon: CreditCard, label: 'Cards' },
-    { id: 'settings', icon: Settings, label: 'Settings' },
+    { id: '/cards', icon: CreditCard, label: 'Cards' },
+    { id: '/settings', icon: Settings, label: 'Settings' },
 ];
 
 export default function BottomNav() {
-    const activeTab = "dashboard"
-    const onTabChange = (tab: string) => { }
+    const pathname = usePathname();
+    const router = useRouter();
+    const activeTab = pathname;
+
+    const onTabChange = (tab: string) => {
+        router.push(`${tab}`)
+    }
     return (
         <div className="fixed bottom-0 left-0 right-0 z-50 flex justify-center px-4 pb-5">
             <div className="max-w-[430px] w-full">

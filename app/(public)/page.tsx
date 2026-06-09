@@ -1,11 +1,8 @@
 'use client'
+import { useSignIn, useSignUp } from '@clerk/nextjs';
 import { ArrowLeft, ArrowRight, Check, Eye, EyeOff } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
-
-interface AuthPageProps {
-  onAuth: () => void;
-}
 
 function GoogleIcon() {
   return (
@@ -100,15 +97,17 @@ function Divider() {
 // ─── Login view ─────────────────────────────────────────────────────────────
 
 interface LoginViewProps {
-  onLogin: () => void;
   onGoRegister: () => void;
 }
 
-function LoginView({ onLogin, onGoRegister }: LoginViewProps) {
+function LoginView({ onGoRegister }: LoginViewProps) {
   const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
   const [errors, setErrors] = useState<{ identifier?: string; password?: string }>({});
   const [loading, setLoading] = useState(false);
+
+  const { signIn, errors: clerkErrors, fetchStatus } = useSignIn()
+  const router = useRouter();
 
   function validate() {
     const e: typeof errors = {};
@@ -118,15 +117,44 @@ function LoginView({ onLogin, onGoRegister }: LoginViewProps) {
     return Object.keys(e).length === 0;
   }
 
-  function handleSubmit() {
-    if (!validate()) return;
-    setLoading(true);
-    setTimeout(() => { setLoading(false); onLogin(); }, 900);
+  const finalizeSignIn = async () => {
+    await signIn.finalize({
+      navigate: ({ session, decorateUrl }) => {
+        if (session?.currentTask) {
+          // Handle pending session tasks
+          // See https://clerk.com/docs/guides/development/custom-flows/authentication/session-tasks
+          console.log(session?.currentTask)
+          return
+        }
+
+        const url = decorateUrl('/home')
+        if (url.startsWith('http')) {
+          window.location.href = url
+        } else {
+          router.push(url)
+        }
+      },
+    })
   }
 
-  function handleGoogle() {
+  async function handleSubmit() {
+    if (!validate()) return;
     setLoading(true);
-    setTimeout(() => { setLoading(false); onLogin(); }, 700);
+
+    const { error: createError } = await signIn.password({
+      identifier: identifier,
+      password,
+    })
+
+    if (createError) {
+      console.error(JSON.stringify(createError, null, 2))
+      return
+    }
+
+    if (signIn.status === "complete") {
+      finalizeSignIn()
+      setLoading(false);
+    }
   }
 
   return (
@@ -135,18 +163,6 @@ function LoginView({ onLogin, onGoRegister }: LoginViewProps) {
         <h2 className="text-xl font-bold text-[#1C1C1E]">Welcome back</h2>
         <p className="text-sm text-[#6C6C70] mt-1">Sign in to your account</p>
       </div>
-
-      {/* Google */}
-      <button
-        onClick={handleGoogle}
-        disabled={loading}
-        className="w-full flex items-center justify-center gap-3 bg-white border-2 border-[#E5E5EA] rounded-2xl py-3.5 text-sm font-semibold text-[#1C1C1E] hover:border-[#D1D1D6] hover:bg-[#FAFAFA] active:bg-[#F2F2F7] transition-all disabled:opacity-60"
-      >
-        <GoogleIcon />
-        Continue with Google
-      </button>
-
-      <Divider />
 
       <InputField
         label="Email or username"
@@ -197,20 +213,23 @@ function LoginView({ onLogin, onGoRegister }: LoginViewProps) {
 // ─── Register view ───────────────────────────────────────────────────────────
 
 interface RegisterViewProps {
-  onRegister: () => void;
   onGoLogin: () => void;
 }
 
 const steps = ['Account', 'Password', 'Done'];
 
-function RegisterView({ onRegister, onGoLogin }: RegisterViewProps) {
+function RegisterView({ onGoLogin }: RegisterViewProps) {
   const [step, setStep] = useState(0);
   const [name, setName] = useState('');
+  const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
+
+  const { signUp } = useSignUp()
+  const router = useRouter();
 
   const strength = (() => {
     if (!password) return 0;
@@ -242,18 +261,55 @@ function RegisterView({ onRegister, onGoLogin }: RegisterViewProps) {
     return Object.keys(e).length === 0;
   }
 
-  function handleNext() {
+  async function handleNext() {
     if (step === 0 && validateStep0()) { setErrors({}); setStep(1); }
     else if (step === 1 && validateStep1()) {
       setErrors({});
       setLoading(true);
-      setTimeout(() => { setLoading(false); setStep(2); }, 900);
-    }
-  }
 
-  function handleGoogleRegister() {
-    setLoading(true);
-    setTimeout(() => { setLoading(false); onRegister(); }, 700);
+      const { error } = await signUp.password({
+        emailAddress: email,
+        firstName: name.split(" ")[0],
+        lastName: name.split(" ")[1],
+        username,
+        password,
+      })
+
+      console.log({ email, name, username, password })
+      console.log("signin up")
+      console.log(error)
+
+      if (error) {
+        setLoading(false);
+        console.log(error);
+        return;
+      }
+      if (signUp.status === 'complete') {
+        await signUp.finalize({
+          navigate: async ({ session, decorateUrl }) => {
+            // Handle session tasks
+            // See https://clerk.com/docs/guides/development/custom-flows/authentication/session-tasks
+            if (session?.currentTask) {
+              console.log(session?.currentTask)
+              return
+            }
+            setLoading(false);
+            setStep(2);
+          },
+        })
+      } else {
+        // Check why the status is not complete
+        setLoading(false);
+        console.log({
+          status: signUp.status,
+          missingFields: signUp.missingFields,
+          unverifiedFields: signUp.unverifiedFields,
+          requiredFields: signUp.requiredFields,
+        })
+        console.error('Sign-up attempt not complete. Status:', signUp.status)
+      }
+
+    }
   }
 
   return (
@@ -292,24 +348,21 @@ function RegisterView({ onRegister, onGoLogin }: RegisterViewProps) {
       {/* Step 0 — Account info */}
       {step === 0 && (
         <div className="space-y-4">
-          <button
-            onClick={handleGoogleRegister}
-            disabled={loading}
-            className="w-full flex items-center justify-center gap-3 bg-white border-2 border-[#E5E5EA] rounded-2xl py-3.5 text-sm font-semibold text-[#1C1C1E] hover:border-[#D1D1D6] hover:bg-[#FAFAFA] transition-all disabled:opacity-60"
-          >
-            <GoogleIcon />
-            Sign up with Google
-          </button>
-
-          <Divider />
-
           <InputField
             label="Full name"
-            placeholder="Kielo Reyes"
+            placeholder="Kielo Mercado"
             value={name}
             onChange={setName}
             autoComplete="name"
             error={errors.name}
+          />
+          <InputField
+            label="Username"
+            placeholder="kieloBash"
+            value={username}
+            onChange={setUsername}
+            autoComplete="username"
+            error={errors.username}
           />
           <InputField
             label="Email address"
@@ -423,10 +476,12 @@ function RegisterView({ onRegister, onGoLogin }: RegisterViewProps) {
             </p>
           </div>
           <button
-            onClick={onRegister}
+            onClick={() => {
+              router.replace("/home")
+            }}
             className="w-full flex items-center justify-center gap-2 bg-[#1D3D8F] text-white rounded-2xl py-4 text-sm font-bold hover:bg-[#163074] transition-all shadow-sm"
           >
-            Go to Dashboard <ArrowRight className="w-4 h-4" strokeWidth={2.5} />
+            Go to Login <ArrowRight className="w-4 h-4" strokeWidth={2.5} />
           </button>
         </div>
       )}
@@ -464,10 +519,11 @@ export default function AuthPage() {
       {/* Form sheet */}
       <div className="bg-white rounded-t-[36px] shadow-[0_-8px_40px_rgba(0,0,0,0.08)] px-6 pt-8 pb-10 border-t border-[#E5E5EA]">
         {view === 'login' ? (
-          <LoginView onLogin={onAuth} onGoRegister={() => setView('register')} />
+          <LoginView onGoRegister={() => setView('register')} />
         ) : (
-          <RegisterView onRegister={onAuth} onGoLogin={() => setView('login')} />
+          <RegisterView onGoLogin={() => setView('login')} />
         )}
+        <div id="clerk-captcha" />
       </div>
     </div>
   );
