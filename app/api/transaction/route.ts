@@ -54,3 +54,52 @@ export async function POST(req: Request) {
         { status: 201 }
     )
 }
+
+export async function GET() {
+    const user = await currentUser();
+
+    const clerkId = user?.id;
+
+    if (!clerkId) {
+        return NextResponse.json(
+            { error: "clerkId is required" },
+            { status: 401 }
+        );
+    }
+
+    const dbUser = await prisma.user.findFirst({
+        where: { clerkId }
+    })
+    if (!dbUser) {
+        return NextResponse.json(
+            { error: "User is not in the database" },
+            { status: 401 }
+        );
+    }
+
+    const transactions = await prisma.transaction.findMany({
+        where: { userId: dbUser.id },
+        orderBy: { transactionDate: "desc" },
+        select: {
+            id: true,
+            amount: true,
+            categoryId: true,
+            transactionDate: true,
+            label: true,
+        }
+    })
+
+    const totalExpenses = await prisma.transaction.aggregate({
+        _sum: {
+            amount: true,
+        },
+        where: {
+            userId: dbUser.id
+        }
+    })
+
+    return NextResponse.json(
+        { transactions, totalExpenses: totalExpenses._sum.amount ?? 0 },
+        { status: 200 }
+    )
+}

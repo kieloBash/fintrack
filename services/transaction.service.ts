@@ -33,4 +33,8 @@ export const TransactionService = {
         const res = await api.get("/transaction/frequent",)
         return res.data
     },
+    async getAllTransaction(): Promise<{ transactions: TransactionDTO[], totalExpenses: number }> {
+        const res = await api.get("/transaction",)
+        return res.data
+    },
 }

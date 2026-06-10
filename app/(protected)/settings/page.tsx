@@ -1,6 +1,7 @@
 "use client"
 import { NotificationAlertItems } from '@/constants/alert-keys';
 import { useUpdateNotificationSettings } from '@/hooks/mutations/useUpdateNotificationSettings';
+import { useAllTransactions } from '@/hooks/queries/useAllTransactions';
 import { useGetUserProfile } from '@/hooks/queries/useGetUserProfile';
 import { useClerk, useUser } from '@clerk/nextjs';
 import { format } from 'date-fns';
@@ -146,7 +147,8 @@ export default function SettingsPage() {
     const { user, isLoaded } = useUser();
     const { data: userProfile, isLoading: isLoadingUserProfile } = useGetUserProfile();
 
-    // const [monthlyBudget, setMonthlyBudget] = useState('15,000');
+    // BUDGET
+    const { data: allTransactions, isLoading: isLoadingAllTransactions } = useAllTransactions();
     const monthlyBudget = useMemo(() => {
         if (!userProfile) return 0
         return userProfile.budgets.reduce(
@@ -154,6 +156,7 @@ export default function SettingsPage() {
             0
         );
     }, [userProfile])
+    const percentSpent = (((allTransactions?.totalExpenses ?? 0) / monthlyBudget) * 100).toFixed(2)
     const [weeklyBudget, setWeeklyBudget] = useState('3,500');
     const [isEdittingPrimaryAccount, setIsEdittingPrimaryAccount] = useState(false)
 
@@ -226,7 +229,7 @@ export default function SettingsPage() {
     // const [summaryTime, setSummaryTime] = useState('08:00');
 
 
-    if (!isLoaded || isLoadingUserProfile) return null;
+    if (!isLoaded || isLoadingUserProfile || isLoadingAllTransactions) return null;
 
     return (
         <div className="px-4 pt-2 pb-6 space-y-6">
@@ -433,13 +436,13 @@ export default function SettingsPage() {
                 <div className="py-3.5">
                     <div className="flex items-center justify-between mb-3">
                         <p className="text-[11px] font-semibold text-[#AEAEB2] uppercase tracking-wide">This month so far</p>
-                        <span className="text-[11px] font-semibold text-[#DC2626]">62% used</span>
+                        <span className="text-[11px] font-semibold text-[#DC2626]">{percentSpent}% used</span>
                     </div>
                     <div className="h-2 bg-[#F2F2F7] rounded-full overflow-hidden">
-                        <div className="h-full rounded-full bg-gradient-to-r from-[#60A5FA] to-[#34D399]" style={{ width: '62%' }} />
+                        <div className="h-full rounded-full bg-gradient-to-r from-[#60A5FA] to-[#34D399]" style={{ width: `${percentSpent}%` }} />
                     </div>
                     <div className="flex justify-between mt-1.5">
-                        <span className="text-[11px] text-[#AEAEB2]">₱9,300 spent</span>
+                        <span className="text-[11px] text-[#AEAEB2]">₱{allTransactions?.totalExpenses} spent</span>
                         <span className="text-[11px] text-[#AEAEB2]">₱{monthlyBudget} limit</span>
                     </div>
                 </div>
