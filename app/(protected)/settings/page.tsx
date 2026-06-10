@@ -1,12 +1,12 @@
 "use client"
+import { NotificationAlertItems } from '@/constants/alert-keys';
+import { useUpdateNotificationSettings } from '@/hooks/mutations/useUpdateNotificationSettings';
+import { useGetUserProfile } from '@/hooks/queries/useGetUserProfile';
 import { useClerk, useUser } from '@clerk/nextjs';
+import { format } from 'date-fns';
 import {
-    AlertCircle,
-    Bell,
     BellOff,
-    Calendar,
     Check,
-    CheckCircle2,
     ChevronRight,
     Edit3,
     LogOut,
@@ -14,10 +14,9 @@ import {
     Plus,
     Shield,
     Trash2,
-    TrendingUp,
-    X,
+    X
 } from 'lucide-react';
-import { useRef, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 
 interface EditableFieldProps {
     label: string;
@@ -134,22 +133,49 @@ function SectionCard({ title, children }: SectionCardProps) {
     );
 }
 
+
 export default function SettingsPage() {
     // CLERK
     const { signOut } = useClerk()
     const { user, isLoaded } = useUser();
 
+    const { data: userProfile, isLoading: isLoadingUserProfile } = useGetUserProfile();
+    console.log(userProfile)
     const [monthlyBudget, setMonthlyBudget] = useState('15,000');
     const [weeklyBudget, setWeeklyBudget] = useState('3,500');
     const [isEdittingPrimaryAccount, setIsEdittingPrimaryAccount] = useState(false)
 
-    const connectedEmails =
-        user?.emailAddresses.map((email) => ({
-            id: email.id,
-            address: email.emailAddress,
-            verified:
-                email.verification?.status === "verified",
-        })) ?? [];
+    // NOTIFICATIONS
+    const notificationSettings = userProfile?.notificationSettings;
+    const updateNotifications = useUpdateNotificationSettings();
+    const alertItems = NotificationAlertItems;
+    const summaryTime =
+        notificationSettings?.summaryTime
+            ? format(
+                new Date(notificationSettings.summaryTime),
+                "HH:mm"
+            )
+            : "08:00";
+    function toggleAlert(
+        key: keyof typeof notificationSettings
+    ) {
+        if (!notificationSettings) return;
+
+        updateNotifications.mutate({
+            [key]: !notificationSettings[key],
+        });
+    }
+
+    // CONNECTED EMAILS
+    const connectedEmails = useMemo(() => {
+        if (!userProfile) return []
+
+        return userProfile.connectedEmails.map((e) => ({
+            id: e.id,
+            emailAddress: e.emailAddress,
+        }))
+
+    }, [userProfile])
 
     const [addingEmail, setAddingEmail] = useState(false);
     const [newEmailDraft, setNewEmailDraft] = useState('');
@@ -185,74 +211,10 @@ export default function SettingsPage() {
         // setConnectedEmails((prev) => prev.filter((e) => e.id !== id));
     }
 
-    const [alerts, setAlerts] = useState({
-        dailySummary: true,
-        budgetWarning: true,
-        unusualSpend: true,
-        weeklyReport: false,
-        largeTransaction: true,
-        savingsReminder: false,
-    });
-
-    const [summaryTime, setSummaryTime] = useState('08:00');
-
-    function toggleAlert(key: keyof typeof alerts) {
-        setAlerts((prev) => ({ ...prev, [key]: !prev[key] }));
-    }
-
-    const alertItems = [
-        {
-            key: 'dailySummary' as const,
-            label: 'Daily Morning Summary',
-            description: 'Digest of yesterday\'s activity at your chosen time',
-            icon: Calendar,
-            iconBg: '#EEF2FB',
-            iconColor: '#1D3D8F',
-        },
-        {
-            key: 'budgetWarning' as const,
-            label: 'Budget Alerts',
-            description: 'Notified when you hit 80% and 100% of budget',
-            icon: AlertCircle,
-            iconBg: '#FFF7ED',
-            iconColor: '#D97706',
-        },
-        {
-            key: 'unusualSpend' as const,
-            label: 'Unusual Spending',
-            description: 'Flags charges that look out of pattern',
-            icon: TrendingUp,
-            iconBg: '#FFF5F5',
-            iconColor: '#DC2626',
-        },
-        {
-            key: 'largeTransaction' as const,
-            label: 'Large Transactions',
-            description: 'Alert for any single charge over ₱2,000',
-            icon: CheckCircle2,
-            iconBg: '#F0FDF4',
-            iconColor: '#059669',
-        },
-        {
-            key: 'weeklyReport' as const,
-            label: 'Weekly Report',
-            description: 'Full breakdown every Sunday morning',
-            icon: Bell,
-            iconBg: '#F5F3FF',
-            iconColor: '#7C3AED',
-        },
-        {
-            key: 'savingsReminder' as const,
-            label: 'Savings Reminders',
-            description: 'Motivational nudges when under budget',
-            icon: CheckCircle2,
-            iconBg: '#D1FAE5',
-            iconColor: '#059669',
-        },
-    ];
+    // const [summaryTime, setSummaryTime] = useState('08:00');
 
 
-    if (!isLoaded) return null;
+    if (!isLoaded || isLoadingUserProfile) return null;
 
     return (
         <div className="px-4 pt-2 pb-6 space-y-6">
@@ -356,7 +318,7 @@ export default function SettingsPage() {
                             {/* Info */}
                             <div className="flex-1 min-w-0">
                                 <div className="flex items-center gap-2">
-                                    <p className="text-sm font-semibold text-[#1C1C1E] truncate">{email.address}</p>
+                                    <p className="text-sm font-semibold text-[#1C1C1E] truncate">{email.emailAddress}</p>
                                 </div>
                             </div>
 
@@ -481,7 +443,11 @@ export default function SettingsPage() {
                     <input
                         type="time"
                         value={summaryTime}
-                        onChange={(e) => setSummaryTime(e.target.value)}
+                        onChange={(e) =>
+                            updateNotifications.mutate({
+                                summaryTime: e.target.value,
+                            })
+                        }
                         className="text-sm font-semibold text-[#1D3D8F] bg-[#EEF2FB] rounded-xl px-3 py-1.5 border-none outline-none cursor-pointer"
                     />
                 </div>
@@ -500,7 +466,12 @@ export default function SettingsPage() {
                                 <p className="text-[11px] text-[#AEAEB2] mt-0.5 leading-snug">{item.description}</p>
                             </div>
                         </div>
-                        <Toggle enabled={alerts[item.key]} onChange={() => toggleAlert(item.key)} />
+                        <Toggle
+                            enabled={
+                                notificationSettings?.[item.key] ?? false
+                            }
+                            onChange={() => toggleAlert(item.key)}
+                        />
                     </div>
                 ))}
 
@@ -516,16 +487,16 @@ export default function SettingsPage() {
                         </div>
                     </div>
                     <Toggle
-                        enabled={Object.values(alerts).every((v) => !v)}
+                        enabled={Object.values([]).every((v) => !v)}
                         onChange={(v) => {
-                            setAlerts({
-                                dailySummary: !v,
-                                budgetWarning: !v,
-                                unusualSpend: !v,
-                                weeklyReport: !v,
-                                largeTransaction: !v,
-                                savingsReminder: !v,
-                            });
+                            // setAlerts({
+                            //     dailySummary: !v,
+                            //     budgetWarning: !v,
+                            //     unusualSpend: !v,
+                            //     weeklyReport: !v,
+                            //     largeTransaction: !v,
+                            //     savingsReminder: !v,
+                            // });
                         }}
                     />
                 </div>

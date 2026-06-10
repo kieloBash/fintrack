@@ -2,8 +2,10 @@ import { Geist_Mono, Inter } from "next/font/google";
 
 import { ThemeProvider } from "@/components/theme-provider";
 import { cn } from "@/lib/utils";
+import { ReactQueryProvider } from "@/providers/react-query-provider";
 import { ClerkProvider } from "@clerk/nextjs";
 import "./globals.css";
+import { Toaster } from "@/components/ui/sonner"
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-sans' })
 
@@ -25,7 +27,10 @@ export default function RootLayout({
     >
       <body>
         <ClerkProvider>
-          <ThemeProvider>{children}</ThemeProvider>
+          <ReactQueryProvider>
+            <ThemeProvider>{children}</ThemeProvider>
+            <Toaster />
+          </ReactQueryProvider>
         </ClerkProvider>
       </body>
     </html>
