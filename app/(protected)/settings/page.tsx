@@ -161,7 +161,7 @@ export default function SettingsPage() {
     const [isEdittingPrimaryAccount, setIsEdittingPrimaryAccount] = useState(false)
 
     // NOTIFICATIONS
-    const notificationSettings = userProfile?.notificationSettings;
+    const notificationSettings: any = userProfile?.notificationSettings;
     const updateNotifications = useUpdateNotificationSettings();
     const alertItems = NotificationAlertItems;
     const summaryTime =
