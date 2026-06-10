@@ -14,16 +14,26 @@ export async function GET() {
         );
     }
 
-    const userProfile = await prisma.user.findFirst({
+    const dbUser = await prisma.user.findFirst({
         where: { clerkId },
-        include: {
-            connectedEmails: true,
-            notificationSettings: true,
-            budgets: true,
+        select: { id: true }
+    })
+    if (!dbUser) {
+        return NextResponse.json(
+            { error: "User is not in the database" },
+            { status: 400 }
+        );
+    }
+
+    const userBudgets = await prisma.budget.findMany({
+        where: {
+            user: {
+                clerkId,
+            }
         }
     })
 
-    return NextResponse.json(userProfile, {
+    return NextResponse.json(userBudgets, {
         status: 200,
     });
 }

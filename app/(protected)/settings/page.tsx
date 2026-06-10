@@ -17,6 +17,7 @@ import {
     X
 } from 'lucide-react';
 import { useMemo, useRef, useState } from 'react';
+import CategoryBudgetManager from './_components/category-budget-manager';
 
 interface EditableFieldProps {
     label: string;
@@ -24,9 +25,10 @@ interface EditableFieldProps {
     prefix?: string;
     inputType?: string;
     onSave: (val: string) => void;
+    disabled?: boolean
 }
 
-function EditableField({ label, value, prefix, inputType = 'text', onSave }: EditableFieldProps) {
+function EditableField({ label, value, prefix, inputType = 'text', onSave, disabled = false }: EditableFieldProps) {
     const [editing, setEditing] = useState(false);
     const [draft, setDraft] = useState(value);
     const inputRef = useRef<HTMLInputElement>(null);
@@ -70,28 +72,32 @@ function EditableField({ label, value, prefix, inputType = 'text', onSave }: Edi
                 )}
             </div>
 
-            {editing ? (
-                <div className="flex items-center gap-1.5 ml-3 flex-shrink-0">
-                    <button
-                        onClick={handleSave}
-                        className="w-8 h-8 rounded-xl bg-[#D1FAE5] flex items-center justify-center"
-                    >
-                        <Check className="w-4 h-4 text-[#059669]" strokeWidth={2.5} />
-                    </button>
-                    <button
-                        onClick={handleCancel}
-                        className="w-8 h-8 rounded-xl bg-[#F2F2F7] flex items-center justify-center"
-                    >
-                        <X className="w-4 h-4 text-[#6C6C70]" strokeWidth={2.5} />
-                    </button>
-                </div>
-            ) : (
-                <button
-                    onClick={handleEdit}
-                    className="ml-3 flex-shrink-0 w-8 h-8 rounded-xl bg-[#EEF2FB] flex items-center justify-center hover:bg-[#DBEAFE] transition-colors"
-                >
-                    <Edit3 className="w-3.5 h-3.5 text-[#1D3D8F]" strokeWidth={2} />
-                </button>
+            {!disabled && (
+                <>
+                    {editing ? (
+                        <div className="flex items-center gap-1.5 ml-3 flex-shrink-0">
+                            <button
+                                onClick={handleSave}
+                                className="w-8 h-8 rounded-xl bg-[#D1FAE5] flex items-center justify-center"
+                            >
+                                <Check className="w-4 h-4 text-[#059669]" strokeWidth={2.5} />
+                            </button>
+                            <button
+                                onClick={handleCancel}
+                                className="w-8 h-8 rounded-xl bg-[#F2F2F7] flex items-center justify-center"
+                            >
+                                <X className="w-4 h-4 text-[#6C6C70]" strokeWidth={2.5} />
+                            </button>
+                        </div>
+                    ) : (
+                        <button
+                            onClick={handleEdit}
+                            className="ml-3 flex-shrink-0 w-8 h-8 rounded-xl bg-[#EEF2FB] flex items-center justify-center hover:bg-[#DBEAFE] transition-colors"
+                        >
+                            <Edit3 className="w-3.5 h-3.5 text-[#1D3D8F]" strokeWidth={2} />
+                        </button>
+                    )}
+                </>
             )}
         </div>
     );
@@ -138,10 +144,16 @@ export default function SettingsPage() {
     // CLERK
     const { signOut } = useClerk()
     const { user, isLoaded } = useUser();
-
     const { data: userProfile, isLoading: isLoadingUserProfile } = useGetUserProfile();
-    console.log(userProfile)
-    const [monthlyBudget, setMonthlyBudget] = useState('15,000');
+
+    // const [monthlyBudget, setMonthlyBudget] = useState('15,000');
+    const monthlyBudget = useMemo(() => {
+        if (!userProfile) return 0
+        return userProfile.budgets.reduce(
+            (total, budget) => Number(total) + Number(budget.amount),
+            0
+        );
+    }, [userProfile])
     const [weeklyBudget, setWeeklyBudget] = useState('3,500');
     const [isEdittingPrimaryAccount, setIsEdittingPrimaryAccount] = useState(false)
 
@@ -405,18 +417,19 @@ export default function SettingsPage() {
             <SectionCard title="Budget">
                 <EditableField
                     label="Monthly Budget"
-                    value={monthlyBudget}
+                    value={monthlyBudget.toFixed(2)}
                     prefix="₱"
                     inputType="text"
-                    onSave={setMonthlyBudget}
+                    onSave={() => { }}
+                    disabled
                 />
-                <EditableField
+                {/* <EditableField
                     label="Weekly Budget"
                     value={weeklyBudget}
                     prefix="₱"
                     inputType="text"
                     onSave={setWeeklyBudget}
-                />
+                /> */}
                 <div className="py-3.5">
                     <div className="flex items-center justify-between mb-3">
                         <p className="text-[11px] font-semibold text-[#AEAEB2] uppercase tracking-wide">This month so far</p>
@@ -430,6 +443,7 @@ export default function SettingsPage() {
                         <span className="text-[11px] text-[#AEAEB2]">₱{monthlyBudget} limit</span>
                     </div>
                 </div>
+                <CategoryBudgetManager />
             </SectionCard>
 
             {/* Alerts */}

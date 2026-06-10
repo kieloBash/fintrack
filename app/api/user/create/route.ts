@@ -1,7 +1,7 @@
 import prisma from "@/lib/prisma";
 import { currentUser } from "@clerk/nextjs/server";
+import { setHours, setMilliseconds, setMinutes, setSeconds } from "date-fns";
 import { NextResponse } from "next/server";
-import { setHours, setMinutes, setSeconds, setMilliseconds } from "date-fns";
 
 export async function POST() {
     try {
