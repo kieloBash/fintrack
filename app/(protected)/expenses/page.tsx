@@ -50,7 +50,7 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
 }
 
 interface CategoryPickerProps {
-    value: string;
+    value: string | null;
     onChange: (id: string) => void;
 }
 
@@ -106,7 +106,7 @@ interface QuickAddProps {
 
 function QuickAdd({ onSaved }: QuickAddProps) {
     const [amount, setAmount] = useState('');
-    const [category, setCategory] = useState('');
+    const [category, setCategory] = useState<string | null>('');
     const [label, setLabel] = useState('');
     const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
     const [note, setNote] = useState('');
@@ -132,7 +132,7 @@ function QuickAdd({ onSaved }: QuickAddProps) {
         setSaved(true);
         onCreateTransaction.mutate({
             amount: Number(amount),
-            categoryId: category,
+            categoryId: category!,
             transactionDate: date,
             description: note,
             label: label,
