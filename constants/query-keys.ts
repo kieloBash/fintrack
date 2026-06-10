@@ -5,5 +5,10 @@ export const queryKeys = {
     },
     category: {
         all: ["category"] as const
-    }
+    },
+    transaction: {
+        all: ["transaction"] as const,
+        recent: ["recent"] as const,
+        frequent: ["frequent"] as const,
+    },
 }

@@ -56,7 +56,7 @@ export default function BottomNav() {
 
                         {/* Center + button */}
                         <button
-                            onClick={() => onTabChange('add')}
+                            onClick={() => onTabChange('expenses')}
                             className={`relative -mt-5 w-14 h-14 rounded-2xl flex items-center justify-center shadow-lg transition-all active:scale-95 ${activeTab === 'add'
                                 ? 'bg-[#163074] shadow-[#1D3D8F]/40'
                                 : 'bg-[#1D3D8F] shadow-[#1D3D8F]/30'
@@ -65,7 +65,7 @@ export default function BottomNav() {
                         >
                             <Plus
                                 className="w-6 h-6 text-white transition-transform"
-                                style={{ transform: activeTab === 'add' ? 'rotate(45deg)' : 'rotate(0deg)' }}
+                                style={{ transform: activeTab === '/expenses' ? 'rotate(45deg)' : 'rotate(0deg)' }}
                                 strokeWidth={2.5}
                             />
                         </button>

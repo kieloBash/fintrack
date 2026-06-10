@@ -137,6 +137,7 @@ model Transaction {
   amount Decimal @db.Decimal(10, 2)
 
   merchant    String?
+  label       String
   description String?
 
   categoryId String?
