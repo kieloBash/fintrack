@@ -1,9 +1,9 @@
 'use client'
 import { UserService } from '@/services/user.service';
-import { useSignIn, useSignUp } from '@clerk/nextjs';
+import { useClerk, useSignIn, useSignUp } from '@clerk/nextjs';
 import { ArrowLeft, ArrowRight, Check, Eye, EyeOff } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 function GoogleIcon() {
   return (
@@ -108,7 +108,14 @@ function LoginView({ onGoRegister }: LoginViewProps) {
   const [loading, setLoading] = useState(false);
 
   const { signIn, errors: clerkErrors, fetchStatus } = useSignIn()
+  const { isSignedIn } = useClerk()
   const router = useRouter();
+
+  useEffect(() => {
+    if (isSignedIn) {
+      router.push("/home")
+    }
+  }, [isSignedIn])
 
   function validate() {
     const e: typeof errors = {};
