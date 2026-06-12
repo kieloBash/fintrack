@@ -6,6 +6,7 @@ import { useUpdateBudgetCategory } from "@/hooks/mutations/useUpdateBudgetCatego
 import { useCategories } from "@/hooks/queries/useCategories";
 import { useUserBudgets } from "@/hooks/queries/useUserBudgets";
 import { getCategoryIcon } from "@/lib/icon-mapper";
+import { toPriceFormat } from "@/lib/number.format";
 import { CategoryBudget } from "@/services/user.service";
 import { Check, Edit3, Plus, Trash2, X } from "lucide-react";
 import { useRef, useState } from "react";
@@ -151,7 +152,7 @@ export default function CategoryBudgetManager() {
                                             />
                                         </div>
                                     ) : (
-                                        <p className="text-sm font-bold text-[#1C1C1E]">₱{parseFloat(budget.amount.toString())}</p>
+                                        <p className="text-sm font-bold text-[#1C1C1E]">₱{toPriceFormat(Number(budget.amount))}</p>
                                     )}
                                 </div>
 

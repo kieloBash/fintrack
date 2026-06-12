@@ -1,4 +1,4 @@
-import { api } from "@/lib/axios"
+import { api } from "@/lib/axios";
 import * as z from "zod";
 
 export const CreateBudgetCategorySchema = z.object({
@@ -12,6 +12,23 @@ export const UpdateBudgetCategorySchema = z.array(z.object({
     amount: z.number(),
 }))
 export type UpdateBudgetCategoryDTO = z.infer<typeof UpdateBudgetCategorySchema>
+
+export interface CategoryBudget {
+    id: string;
+    label: string;
+    icon: React.ElementType;
+    bg: string;
+    color: string;
+    spent: number;
+    budget: number;
+}
+
+export interface UnbudgetedTransaction {
+    id: number;
+    label: string;
+    amount: number;
+    categoryGuess: string;
+}
 
 export const BudgetCategoryService = {
     async createBudgetCategory(payload: CreateBudgetCategoryDTO) {
@@ -28,6 +45,10 @@ export const BudgetCategoryService = {
     },
     async deleteBudgetCategory(id: string) {
         const res = await api.delete(`/budget/category-budget/${id}`)
+        return res.data
+    },
+    async getBudgetSummary(): Promise<{ categoryBudgets: CategoryBudget[], unbudgetedTransactions: UnbudgetedTransaction[] }> {
+        const res = await api.get(`/budget/category-budget/summary`)
         return res.data
     },
 }

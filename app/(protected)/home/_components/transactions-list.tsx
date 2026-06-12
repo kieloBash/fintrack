@@ -1,4 +1,9 @@
 "use client"
+import { useCategories } from '@/hooks/queries/useCategories';
+import { useRecentTransactions } from '@/hooks/queries/useRecentTransactions';
+import { getCategoryIcon } from '@/lib/icon-mapper';
+import { toPriceFormat } from '@/lib/number.format';
+import { getTimeAgo } from '@/lib/time.format';
 import { Car, Coffee, Music, ShoppingBag, Smartphone, Utensils } from 'lucide-react';
 
 const transactions = [
@@ -11,6 +16,14 @@ const transactions = [
 ];
 
 export default function TransactionsList() {
+    const { data: recentTransactions } = useRecentTransactions();
+    const { data: categories } = useCategories();
+
+    function getCategory(id: string | null) {
+        return categories?.find((c) => c.id === id)
+    }
+
+
     return (
         <div className="space-y-3">
             <div className="flex items-center justify-between px-1">
@@ -21,36 +34,41 @@ export default function TransactionsList() {
             </div>
 
             <div className="bg-white rounded-3xl border border-[#E5E5EA] shadow-sm overflow-hidden">
-                {transactions.map((tx, i) => (
-                    <div
-                        key={tx.id}
-                        className={`flex items-center gap-3.5 px-4 py-3.5 hover:bg-[#F9F9FB] transition-colors ${i < transactions.length - 1 ? 'border-b border-[#F2F2F7]' : ''
-                            }`}
-                    >
-                        {/* Icon */}
+                {(recentTransactions ?? []).map((tx, i) => {
+                    const cat = getCategory(tx.categoryId);
+                    const Icon = getCategoryIcon(cat!.icon);
+                    return (
                         <div
-                            className="w-10 h-10 rounded-2xl flex items-center justify-center flex-shrink-0"
-                            style={{ backgroundColor: tx.bg }}
+                            key={tx.id}
+                            className={`flex items-center gap-3.5 px-4 py-3.5 hover:bg-[#F9F9FB] transition-colors ${i < transactions.length - 1 ? 'border-b border-[#F2F2F7]' : ''
+                                }`}
                         >
-                            <tx.icon className="w-4.5 h-4.5" style={{ color: tx.color }} strokeWidth={2} />
-                        </div>
-
-                        {/* Details */}
-                        <div className="flex-1 min-w-0">
-                            <p className="text-sm font-semibold text-[#1C1C1E] truncate">{tx.merchant}</p>
-                            <div className="flex items-center gap-1.5 mt-0.5">
-                                <span className="text-[11px] font-medium text-[#AEAEB2]">{tx.category}</span>
-                                <span className="w-0.5 h-0.5 rounded-full bg-[#AEAEB2]" />
-                                <span className="text-[11px] text-[#AEAEB2]">{tx.time}</span>
+                            {/* Icon */}
+                            <div
+                                className="w-10 h-10 rounded-2xl flex items-center justify-center flex-shrink-0"
+                                style={{ backgroundColor: cat!.bg }}
+                            >
+                                <Icon className="w-4.5 h-4.5" style={{ color: cat!.color }} strokeWidth={2} />
                             </div>
-                        </div>
 
-                        {/* Amount */}
-                        <p className="text-sm font-semibold text-[#FF3B30] flex-shrink-0">
-                            −₱{Math.abs(tx.amount).toLocaleString()}
-                        </p>
-                    </div>
-                ))}
+                            {/* Details */}
+                            <div className="flex-1 min-w-0">
+                                <p className="text-sm font-semibold text-[#1C1C1E] truncate">{tx.label}</p>
+                                <p className="text-xs text-[#AEAEB2] truncate">{tx.description}</p>
+                                <div className="flex items-center gap-1.5 mt-0.5">
+                                    <span className="text-[11px] font-medium text-[#AEAEB2]">{cat?.label}</span>
+                                    <span className="w-0.5 h-0.5 rounded-full bg-[#AEAEB2]" />
+                                    <span className="text-[11px] text-[#AEAEB2]">{getTimeAgo(tx.transactionDate)}</span>
+                                </div>
+                            </div>
+
+                            {/* Amount */}
+                            <p className="text-sm font-semibold text-[#FF3B30] flex-shrink-0">
+                                −₱{toPriceFormat(Number(tx.amount))}
+                            </p>
+                        </div>
+                    )
+                })}
             </div>
         </div>
     );

@@ -17,6 +17,10 @@ export function useCreateBudgetCategory() {
             });
 
             queryClient.invalidateQueries({
+                queryKey: queryKeys.budget.summary,
+            });
+
+            queryClient.invalidateQueries({
                 queryKey: queryKeys.user.profile,
             });
         },

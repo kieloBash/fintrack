@@ -1,6 +1,7 @@
 import prisma from "@/lib/prisma";
 import { CreateTransactionSchema } from "@/services/transaction.service";
 import { currentUser } from "@clerk/nextjs/server";
+import { endOfDay, endOfMonth, startOfDay, startOfMonth } from "date-fns";
 import { NextResponse } from "next/server";
 
 export async function POST(req: Request) {
@@ -78,7 +79,13 @@ export async function GET() {
     }
 
     const transactions = await prisma.transaction.findMany({
-        where: { userId: dbUser.id },
+        where: {
+            userId: dbUser.id,
+            transactionDate: {
+                gte: startOfDay(startOfMonth(new Date())),
+                lte: endOfDay(endOfMonth(new Date())),
+            }
+        },
         orderBy: { transactionDate: "desc" },
         select: {
             id: true,

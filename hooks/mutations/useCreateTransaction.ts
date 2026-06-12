@@ -17,6 +17,10 @@ export function useCreateTransaction() {
             });
 
             queryClient.invalidateQueries({
+                queryKey: queryKeys.budget.summary,
+            });
+
+            queryClient.invalidateQueries({
                 queryKey: queryKeys.transaction.recent,
             });
 

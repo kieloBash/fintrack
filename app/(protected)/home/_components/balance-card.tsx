@@ -1,59 +1,125 @@
 'use client'
-import { Eye, TrendingUp } from 'lucide-react';
+import { Calendar, CalendarDays, Eye, EyeOff } from 'lucide-react';
+import { useState } from 'react';
 
-export default function BalanceCard() {
+function SpendPill({
+    icon: Icon,
+    label,
+    spent,
+    budget,
+    accent,
+}: {
+    icon: React.ElementType;
+    label: string;
+    spent: number;
+    budget: number;
+    accent: string;
+}) {
+    const pct =
+        budget > 0
+            ? Math.min((spent / budget) * 100, 100)
+            : 0;
+    const remaining = budget - spent;
+    const over = remaining < 0;
+
     return (
-        <div className="bg-[#1D3D8F] rounded-3xl p-6 shadow-lg overflow-hidden relative">
-            {/* Subtle geometric accent — a large soft circle, no blur, no glass */}
-            <div className="absolute -top-12 -right-12 w-52 h-52 rounded-full bg-white/[0.06]" />
-            <div className="absolute bottom-0 right-6 w-32 h-32 rounded-full bg-white/[0.04]" />
+        <div className="flex-1 bg-white/[0.10] rounded-2xl px-4 py-3.5">
+            <div className="flex items-center gap-1.5 mb-2">
+                <Icon className="w-3.5 h-3.5 text-white/50" strokeWidth={2} />
+                <span className="text-[10px] font-semibold text-white/50 uppercase tracking-wide">{label}</span>
+            </div>
+            <p className="text-xl font-extrabold text-white tracking-tight leading-none">
+                ₱{spent.toLocaleString()}
+            </p>
+            <p className="text-[11px] text-white/50 mt-0.5">
+                of ₱{budget.toLocaleString()}
+            </p>
 
-            <div className="relative z-10">
+            {/* Bar */}
+            <div className="mt-2.5 h-1 bg-white/10 rounded-full overflow-hidden">
+                <div
+                    className="h-full rounded-full transition-all duration-700"
+                    style={{
+                        width: `${pct}%`,
+                        backgroundColor: over ? '#FCA5A5' : accent,
+                    }}
+                />
+            </div>
+
+            <p className={`text-[10px] font-semibold mt-1.5 ${over ? 'text-[#FCA5A5]' : 'text-white/60'}`}>
+                {over
+                    ? `₱${Math.abs(remaining).toLocaleString()} over`
+                    : `₱${remaining.toLocaleString()} left`}
+            </p>
+        </div>
+    );
+}
+
+export default function BalanceCard({ MONTHLY, WEEKLY }: { MONTHLY: { spent: number, budget: number }, WEEKLY: { spent: number, budget: number } }) {
+
+    const [hidden, setHidden] = useState(false);
+
+    return (
+        <div className="bg-[#1D3D8F] rounded-3xl p-5 shadow-lg overflow-hidden relative">
+            <div className="absolute -top-12 -right-12 w-52 h-52 rounded-full bg-white/[0.05]" />
+            <div className="absolute bottom-0 right-6 w-32 h-32 rounded-full bg-white/[0.03]" />
+
+            <div className="relative z-10 space-y-4">
                 {/* Header row */}
-                <div className="flex items-center justify-between mb-5">
-                    <p className="text-sm font-medium text-white/60 tracking-wide uppercase">Total Balance</p>
-                    <button className="flex items-center gap-1.5 text-white/50 hover:text-white/80 transition-colors">
-                        <Eye className="w-4 h-4" />
-                        <span className="text-xs">Hide</span>
+                <div className="flex items-start justify-between">
+                    <div>
+                        <p className="text-[11px] font-semibold text-white/50 uppercase tracking-wide mb-1">Total Balance</p>
+                        {hidden ? (
+                            <p className="text-4xl font-extrabold text-white/30 tracking-tight">••••••</p>
+                        ) : (
+                            <div className="flex items-baseline gap-1">
+                                <span className="text-xl font-bold text-white/70">₱</span>
+                                <span className="text-4xl font-extrabold text-white tracking-tight">38,450</span>
+                                <span className="text-xl font-semibold text-white/50">.80</span>
+                            </div>
+                        )}
+                    </div>
+
+                    <button
+                        onClick={() => setHidden((h) => !h)}
+                        className="w-9 h-9 rounded-xl bg-white/10 flex items-center justify-center hover:bg-white/20 transition-colors mt-0.5"
+                    >
+                        {hidden
+                            ? <Eye className="w-4 h-4 text-white/60" strokeWidth={2} />
+                            : <EyeOff className="w-4 h-4 text-white/60" strokeWidth={2} />}
                     </button>
                 </div>
 
-                {/* Balance */}
-                <div className="mb-5">
-                    <div className="flex items-baseline gap-1">
-                        <span className="text-2xl font-semibold text-white/80">₱</span>
-                        <span className="text-5xl font-bold text-white tracking-tight">38,450</span>
-                        <span className="text-2xl font-semibold text-white/60">.80</span>
+                {/* Trend badge */}
+                {/* <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1.5 bg-white/10 px-2.5 py-1 rounded-full">
+                        <TrendIcon className="w-3 h-3" style={{ color: trendColor }} strokeWidth={2.5} />
+                        <span className="text-[11px] font-bold" style={{ color: trendColor }}>
+                            {monthTrending ? '+' : ''}{MONTHLY.trend}%
+                        </span>
                     </div>
-                </div>
-
-                {/* Trend pill */}
-                <div className="flex items-center gap-3 mb-5">
-                    <div className="flex items-center gap-1.5 bg-white/[0.12] px-3 py-1.5 rounded-full">
-                        <TrendingUp className="w-3.5 h-3.5 text-[#34D399]" strokeWidth={2.5} />
-                        <span className="text-xs font-semibold text-[#34D399]">+5.2%</span>
-                    </div>
-                    <span className="text-xs text-white/50">vs last month</span>
-                </div>
+                    <span className="text-[11px] text-white/40">vs last month</span>
+                </div> */}
 
                 {/* Divider */}
-                <div className="border-t border-white/10 pt-4">
-                    <div className="flex items-center justify-between">
-                        <div>
-                            <p className="text-xs text-white/50 mb-0.5">Spent yesterday</p>
-                            <p className="text-base font-semibold text-white">₱2,350.00</p>
-                        </div>
-                        <div className="text-right">
-                            <p className="text-xs text-white/50 mb-0.5">Monthly limit</p>
-                            <p className="text-base font-semibold text-white">₱15,000</p>
-                        </div>
-                    </div>
+                <div className="border-t border-white/10" />
 
-                    {/* Progress bar */}
-                    <div className="mt-3 h-1.5 bg-white/10 rounded-full overflow-hidden">
-                        <div className="h-full bg-gradient-to-r from-[#60A5FA] to-[#34D399] rounded-full" style={{ width: '62%' }} />
-                    </div>
-                    <p className="text-[11px] text-white/40 mt-1.5">62% of monthly budget used</p>
+                {/* Monthly + Weekly spend pills */}
+                <div className="flex gap-3">
+                    <SpendPill
+                        icon={Calendar}
+                        label="This month"
+                        spent={MONTHLY.spent}
+                        budget={MONTHLY.budget}
+                        accent="#60A5FA"
+                    />
+                    <SpendPill
+                        icon={CalendarDays}
+                        label="This week"
+                        spent={WEEKLY.spent}
+                        budget={WEEKLY.budget}
+                        accent="#34D399"
+                    />
                 </div>
             </div>
         </div>

@@ -6,6 +6,9 @@ export const queryKeys = {
     category: {
         all: ["category"] as const
     },
+    budget: {
+        summary: ["budget", "summary"] as const
+    },
     transaction: {
         all: ["transaction"] as const,
         recent: ["recent"] as const,
