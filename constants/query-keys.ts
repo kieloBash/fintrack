@@ -11,6 +11,7 @@ export const queryKeys = {
     },
     transaction: {
         all: ["transaction"] as const,
+        infinite: ["transaction", "infinite"] as const,
         recent: ["recent"] as const,
         frequent: ["frequent"] as const,
     },

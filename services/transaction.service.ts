@@ -1,4 +1,5 @@
 import { Transaction } from "@/app/generated/prisma/client"
+import { PaginatedResponse, PaginationParams } from "@/lib/api/types"
 import { api } from "@/lib/axios"
 import * as z from "zod"
 
@@ -17,6 +18,9 @@ export type FrequentTransactionDTO = Transaction & {
     count: number;
 }
 
+export interface GetTransactionParams extends PaginationParams {
+    search?: string;
+}
 
 export const TransactionService = {
     async createTransaction(payload: CreateTransactionDTO) {
@@ -35,6 +39,17 @@ export const TransactionService = {
     },
     async getAllTransaction(): Promise<{ transactions: TransactionDTO[], totalExpenses: number }> {
         const res = await api.get("/transaction",)
+        return res.data
+    },
+    async getPaginated(
+        params: GetTransactionParams
+    ): Promise<PaginatedResponse<TransactionDTO>> {
+        const res = await api.get("/transaction/infinite", { params });
+        return res.data; // expects { items: TransactionDTO[], nextCursor: number | null }
+    },
+    async deleteTransaction(id: string) {
+        const res = await api.delete(`/transaction/${id}`,
+        )
         return res.data
     },
 }
