@@ -1,5 +1,6 @@
 import prisma from "@/lib/prisma";
 import { currentUser } from "@clerk/nextjs/server";
+import { endOfDay, endOfMonth, startOfDay, startOfMonth } from "date-fns";
 import { NextResponse } from "next/server";
 
 export async function GET() {
@@ -32,6 +33,10 @@ export async function GET() {
     const transactions = await prisma.transaction.findMany({
         where: {
             userId: dbUser.id,
+            transactionDate: {
+                gte: startOfDay(startOfMonth(new Date())),
+                lte: endOfDay(endOfMonth(new Date())),
+            }
         },
         include: {
             category: true,
